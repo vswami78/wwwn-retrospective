@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { boardRoutes } from './routes/boardRoutes.js';
+import { itemRoutes } from './routes/itemRoutes.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/boards', boardRoutes);
+app.use('/api/boards/:boardId/items', itemRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
