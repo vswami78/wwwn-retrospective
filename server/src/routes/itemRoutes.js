@@ -20,6 +20,10 @@ router.post('/', extractClientId, itemCreationLimiter, async (req, res) => {
       who
     });
 
+    // Broadcast item-added event via SSE
+    const sseService = req.app.get('sseService');
+    sseService.broadcast(boardId, 'item-added', item);
+
     res.status(201).json(item);
   } catch (error) {
     console.error('Error creating item:', error);

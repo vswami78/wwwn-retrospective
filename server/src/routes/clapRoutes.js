@@ -27,6 +27,10 @@ router.post('/', extractClientId, async (req, res) => {
     // Increment item clap count
     const updatedItem = await itemRepo.incrementClaps(itemId);
 
+    // Broadcast item-clapped event via SSE
+    const sseService = req.app.get('sseService');
+    sseService.broadcast(boardId, 'item-clapped', updatedItem);
+
     res.json(updatedItem);
   } catch (error) {
     console.error('Error adding clap:', error);

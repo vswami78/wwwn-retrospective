@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import { boardRoutes } from './routes/boardRoutes.js';
 import { itemRoutes } from './routes/itemRoutes.js';
 import { clapRoutes } from './routes/clapRoutes.js';
+import { eventsRoutes } from './routes/eventsRoutes.js';
+import { sseService } from './services/SSEService.js';
 
 dotenv.config();
 
@@ -17,6 +19,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Make sseService available to routes
+app.set('sseService', sseService);
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -26,6 +31,7 @@ app.get('/health', (req, res) => {
 app.use('/api/boards', boardRoutes);
 app.use('/api/boards/:boardId/items', itemRoutes);
 app.use('/api/boards/:boardId/items/:itemId/clap', clapRoutes);
+app.use('/api/boards/:boardId/events', eventsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

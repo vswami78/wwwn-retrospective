@@ -49,6 +49,10 @@ router.post('/:id/reveal', verifyFacilitator, async (req, res) => {
     const { revealed } = req.body;
     const updated = await boardRepo.updateBoard(req.params.id, { revealed });
 
+    // Broadcast reveal-changed event via SSE
+    const sseService = req.app.get('sseService');
+    sseService.broadcast(req.params.id, 'reveal-changed', { revealed });
+
     res.json(updated);
   } catch (error) {
     console.error('Error updating reveal:', error);
