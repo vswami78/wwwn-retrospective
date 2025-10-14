@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
+import { BoardPage } from './pages/BoardPage';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
-      <header className="max-w-7xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold">WWWN Retrospective Board</h1>
-      </header>
-      <main className="max-w-7xl mx-auto">
-        <p className="text-gray-400">Loading...</p>
-      </main>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/board/:boardId" element={<BoardPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
