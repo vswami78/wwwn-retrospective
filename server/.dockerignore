@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+*.test.js
+__tests__
+.git
+.gitignore
+README.md
+serviceAccountKey.json
