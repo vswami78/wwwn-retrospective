@@ -6,6 +6,7 @@ import { boardRoutes } from './routes/boardRoutes.js';
 import { itemRoutes } from './routes/itemRoutes.js';
 import { clapRoutes } from './routes/clapRoutes.js';
 import { eventsRoutes } from './routes/eventsRoutes.js';
+import { exportRoutes } from './routes/exportRoutes.js';
 import { sseService } from './services/SSEService.js';
 
 dotenv.config();
@@ -32,6 +33,7 @@ app.use('/api/boards', boardRoutes);
 app.use('/api/boards/:boardId/items', itemRoutes);
 app.use('/api/boards/:boardId/items/:itemId/clap', clapRoutes);
 app.use('/api/boards/:boardId/events', eventsRoutes);
+app.use('/api/boards/:boardId/export.csv', exportRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
