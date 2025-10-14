@@ -34,7 +34,7 @@ gcloud run deploy $SERVICE_BACKEND \
   --memory 512Mi \
   --cpu 1 \
   --port 8080 \
-  --set-env-vars "NODE_ENV=production,PORT=8080,DEFAULT_BOARD_TTL_DAYS=7"
+  --set-env-vars "NODE_ENV=production,DEFAULT_BOARD_TTL_DAYS=7"
 
 # Get backend URL
 BACKEND_URL=$(gcloud run services describe $SERVICE_BACKEND --region $REGION --format 'value(status.url)')
