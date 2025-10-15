@@ -6,9 +6,12 @@ Real-time feedback collection tool for live retrospective sessions.
 
 - **Frictionless**: No login required, just share a link
 - **Gate/Reveal**: Hide ideas during collection, reveal all at once
+- **See Your Own Items**: When gate is enabled, you can see your own submissions but others are hidden
+- **Edit Your Items**: Click the edit icon (✎) to modify your own submissions
+- **Toggle Claps**: Click the clap button to add/remove your vote (with visual indicator)
 - **Real-time**: Live updates via Server-Sent Events
-- **Simple Reactions**: One clap per person per item
-- **Search**: Filter by idea text or author name
+- **Simple Reactions**: One clap per person per item (toggle on/off)
+- **Search & Sort**: Filter by idea text or author name, sort by clap count
 - **Export**: Download CSV at end of session
 - **Ephemeral**: Auto-expires after 7 days
 
@@ -159,8 +162,10 @@ gcloud run services update wwwn-backend \
 2. Select "I like..." or "I wish..."
 3. Enter your feedback and name
 4. Submit as many items as needed
-5. Wait for facilitator to reveal
-6. Clap on items you agree with
+5. You'll see your own items immediately, others are hidden until reveal
+6. Click the edit icon (✎) to modify your own submissions
+7. Wait for facilitator to reveal all items
+8. Click 👏 to clap on items you agree with (click again to remove your clap)
 
 ## Architecture
 
@@ -190,8 +195,10 @@ POST   /api/boards/:id/reveal                   Toggle reveal (facilitator)
 GET    /api/boards/:id/events                   SSE stream
 POST   /api/boards/:id/items                    Create item
 GET    /api/boards/:id/items                    List items
+PUT    /api/boards/:id/items/:itemId            Update item (owner only)
 DELETE /api/boards/:id/items/:itemId            Delete item (facilitator)
 POST   /api/boards/:id/items/:itemId/clap       Add clap
+DELETE /api/boards/:id/items/:itemId/clap       Remove clap
 GET    /api/boards/:id/export.csv               Export CSV (facilitator)
 ```
 
