@@ -23,7 +23,7 @@ export function ItemTable() {
     const sorted = [...filtered];
     if (sortBy === 'claps') {
       sorted.sort((a, b) => {
-        const diff = b.clapCount - a.clapCount;
+        const diff = (b.claps || 0) - (a.claps || 0);
         return sortOrder === 'desc' ? diff : -diff;
       });
     } else if (sortBy === 'time') {
