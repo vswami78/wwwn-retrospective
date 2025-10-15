@@ -12,12 +12,14 @@ router.post('/', extractClientId, itemCreationLimiter, async (req, res) => {
   try {
     const { starter, idea, who } = req.body;
     const { boardId } = req.params;
+    const clientId = req.clientId; // Get from middleware
 
     const item = await itemRepo.createItem({
       boardId,
       starter,
       idea,
-      who
+      who,
+      clientId
     });
 
     // Broadcast item-added event via SSE
@@ -49,6 +51,46 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error fetching items:', error);
     res.status(500).json({ error: 'Failed to fetch items' });
+  }
+});
+
+// PUT /boards/:boardId/items/:itemId - Update item (owner only)
+router.put('/:itemId', extractClientId, async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { starter, idea, who } = req.body;
+    const clientId = req.clientId;
+
+    // Get existing item to verify ownership
+    const existingItem = await itemRepo.getItemById(itemId);
+    if (!existingItem) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    // Only allow owner to edit
+    if (existingItem.clientId !== clientId) {
+      return res.status(403).json({ error: 'You can only edit your own items' });
+    }
+
+    const updatedItem = await itemRepo.updateItem(itemId, {
+      starter,
+      idea,
+      who
+    });
+
+    // Broadcast item-updated event via SSE
+    const sseService = req.app.get('sseService');
+    sseService.broadcast(existingItem.boardId, 'item-updated', updatedItem);
+
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error updating item:', error);
+
+    if (error.message.includes('must be') || error.message.includes('Invalid')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Failed to update item' });
   }
 });
 

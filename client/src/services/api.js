@@ -77,16 +77,29 @@ export class ApiClient {
     return this.request(`/boards/${boardId}/items${query}`);
   }
 
+  async updateItem(boardId, itemId, itemData) {
+    return this.request(`/boards/${boardId}/items/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify(itemData)
+    });
+  }
+
   async deleteItem(boardId, itemId) {
     return this.request(`/boards/${boardId}/items/${itemId}`, {
       method: 'DELETE'
     });
   }
 
-  // Clap endpoint
+  // Clap endpoints
   async addClap(boardId, itemId) {
     return this.request(`/boards/${boardId}/items/${itemId}/clap`, {
       method: 'POST'
+    });
+  }
+
+  async removeClap(boardId, itemId) {
+    return this.request(`/boards/${boardId}/items/${itemId}/clap`, {
+      method: 'DELETE'
     });
   }
 
@@ -103,6 +116,11 @@ export class ApiClient {
     eventSource.addEventListener('item-added', (event) => {
       const data = JSON.parse(event.data);
       onMessage('item-added', data);
+    });
+
+    eventSource.addEventListener('item-updated', (event) => {
+      const data = JSON.parse(event.data);
+      onMessage('item-updated', data);
     });
 
     eventSource.addEventListener('item-clapped', (event) => {

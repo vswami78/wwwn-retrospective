@@ -6,6 +6,7 @@ export class Item {
     this.idea = data.idea;
     this.who = data.who;
     this.claps = data.claps ?? 0;
+    this.clientId = data.clientId; // Track item owner
     this.createdAt = data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt);
   }
 
@@ -16,6 +17,7 @@ export class Item {
       idea: this.idea,
       who: this.who,
       claps: this.claps,
+      clientId: this.clientId,
       createdAt: this.createdAt
     };
   }

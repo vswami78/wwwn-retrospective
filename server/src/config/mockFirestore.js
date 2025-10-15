@@ -91,6 +91,7 @@ class MockQuery {
     return {
       docs: results.map(doc => ({
         id: doc._id,
+        ref: new MockDocumentReference(this.collection, doc._id),
         data: () => {
           const { _id, ...rest } = doc;
           return rest;

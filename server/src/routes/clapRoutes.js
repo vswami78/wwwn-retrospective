@@ -38,4 +38,34 @@ router.post('/', extractClientId, async (req, res) => {
   }
 });
 
+// DELETE /boards/:boardId/items/:itemId/clap - Remove clap
+router.delete('/', extractClientId, async (req, res) => {
+  try {
+    const { boardId, itemId } = req.params;
+    const { clientId } = req;
+
+    // Check if client has clapped
+    const hasClapped = await clapRepo.hasClientClapped(itemId, clientId);
+
+    if (!hasClapped) {
+      return res.status(400).json({ error: 'Have not clapped for this item' });
+    }
+
+    // Remove clap record
+    await clapRepo.removeClap(itemId, clientId);
+
+    // Decrement item clap count
+    const updatedItem = await itemRepo.decrementClaps(itemId);
+
+    // Broadcast item-clapped event via SSE
+    const sseService = req.app.get('sseService');
+    sseService.broadcast(boardId, 'item-clapped', updatedItem);
+
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error removing clap:', error);
+    res.status(500).json({ error: 'Failed to remove clap' });
+  }
+});
+
 export { router as clapRoutes };

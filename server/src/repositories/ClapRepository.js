@@ -31,6 +31,20 @@ export class ClapRepository {
     return !snapshot.empty;
   }
 
+  async removeClap(itemId, clientId) {
+    const snapshot = await this.collection
+      .where('itemId', '==', itemId)
+      .where('clientId', '==', clientId)
+      .get();
+
+    if (snapshot.empty) {
+      throw new Error('Clap not found');
+    }
+
+    // Delete the clap record
+    await snapshot.docs[0].ref.delete();
+  }
+
   async getClapsForItem(itemId) {
     const snapshot = await this.collection
       .where('itemId', '==', itemId)

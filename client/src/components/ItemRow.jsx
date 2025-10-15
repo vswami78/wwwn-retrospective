@@ -1,34 +1,82 @@
 import { useState } from 'react';
 import { useBoard } from '../hooks/useBoard';
+import { getClientId } from '../utils/clientId';
 
 export function ItemRow({ item }) {
-  const { board, isFacilitator, addClap, deleteItem } = useBoard();
+  const { board, isFacilitator, addClap, removeClap, updateItem, deleteItem } = useBoard();
   const [isClapping, setIsClapping] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    starter: item.starter,
+    idea: item.idea,
+    who: item.who
+  });
   const [hasClapped, setHasClapped] = useState(() => {
     const clapped = JSON.parse(localStorage.getItem('wwwn-clapped') || '[]');
     return clapped.includes(item.id);
   });
 
-  const isHidden = board.gateEnabled && !board.revealed && !isFacilitator;
-  const canClap = board.revealed && !hasClapped;
+  const clientId = getClientId();
+  const isOwnItem = item.clientId === clientId;
+  const isHidden = board.gateEnabled && !board.revealed && !isFacilitator && !isOwnItem;
+  const canInteractWithClap = board.revealed;
 
   const handleClap = async () => {
-    if (!canClap || isClapping) return;
+    if (!canInteractWithClap || isClapping) return;
 
     setIsClapping(true);
     try {
-      await addClap(item.id);
+      if (hasClapped) {
+        // Remove clap
+        await removeClap(item.id);
 
-      // Mark as clapped in localStorage
-      const clapped = JSON.parse(localStorage.getItem('wwwn-clapped') || '[]');
-      clapped.push(item.id);
-      localStorage.setItem('wwwn-clapped', JSON.stringify(clapped));
-      setHasClapped(true);
+        // Remove from localStorage
+        const clapped = JSON.parse(localStorage.getItem('wwwn-clapped') || '[]');
+        const updated = clapped.filter(id => id !== item.id);
+        localStorage.setItem('wwwn-clapped', JSON.stringify(updated));
+        setHasClapped(false);
+      } else {
+        // Add clap
+        await addClap(item.id);
+
+        // Mark as clapped in localStorage
+        const clapped = JSON.parse(localStorage.getItem('wwwn-clapped') || '[]');
+        clapped.push(item.id);
+        localStorage.setItem('wwwn-clapped', JSON.stringify(clapped));
+        setHasClapped(true);
+      }
     } catch (err) {
-      console.error('Failed to clap:', err);
+      console.error('Failed to toggle clap:', err);
     } finally {
       setIsClapping(false);
     }
+  };
+
+  const handleEdit = () => {
+    setEditData({
+      starter: item.starter,
+      idea: item.idea,
+      who: item.who
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await updateItem(item.id, editData);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to update item:', err);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditData({
+      starter: item.starter,
+      idea: item.idea,
+      who: item.who
+    });
   };
 
   const handleDelete = async () => {
@@ -51,6 +99,64 @@ export function ItemRow({ item }) {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  if (isEditing) {
+    return (
+      <tr className="border-b border-gray-700 bg-gray-800/70">
+        {/* Starter */}
+        <td className="px-4 py-3">
+          <select
+            value={editData.starter}
+            onChange={(e) => setEditData({...editData, starter: e.target.value})}
+            className="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-sm text-gray-100"
+          >
+            <option value="like">I like...</option>
+            <option value="wish">I wish...</option>
+          </select>
+        </td>
+
+        {/* Idea */}
+        <td className="px-4 py-3">
+          <input
+            type="text"
+            value={editData.idea}
+            onChange={(e) => setEditData({...editData, idea: e.target.value})}
+            className="w-full px-3 py-1 bg-gray-700 border border-gray-600 rounded text-sm text-gray-100"
+            placeholder="Your feedback..."
+          />
+        </td>
+
+        {/* Who */}
+        <td className="px-4 py-3">
+          <input
+            type="text"
+            value={editData.who}
+            onChange={(e) => setEditData({...editData, who: e.target.value})}
+            className="w-full px-3 py-1 bg-gray-700 border border-gray-600 rounded text-sm text-gray-100"
+            placeholder="Your name..."
+          />
+        </td>
+
+        {/* Actions */}
+        <td className="px-4 py-3" colSpan={isFacilitator ? 2 : 1}>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveEdit}
+              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+            >
+              Save
+            </button>
+            <button
+              onClick={handleCancelEdit}
+              className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
 
   return (
     <tr className="border-b border-gray-700 hover:bg-gray-800/50 transition">
@@ -88,29 +194,42 @@ export function ItemRow({ item }) {
       <td className="px-4 py-3">
         <button
           onClick={handleClap}
-          disabled={!canClap || isClapping}
+          disabled={!canInteractWithClap || isClapping}
           className={`flex items-center gap-2 px-3 py-1 rounded-full transition ${
-            canClap
+            canInteractWithClap
               ? 'bg-gray-700 hover:bg-gray-600 cursor-pointer'
               : 'bg-gray-800 cursor-not-allowed'
           } ${hasClapped ? 'ring-2 ring-purple-500' : ''}`}
-          title={hasClapped ? 'Already clapped' : 'Clap for this'}
+          title={hasClapped ? 'Click to remove your clap' : 'Clap for this'}
         >
           <span>👏</span>
           <span className="text-gray-100 font-medium">{item.claps}</span>
         </button>
       </td>
 
-      {/* Delete (facilitator only) */}
-      {isFacilitator && (
+      {/* Actions (facilitator delete or own item edit) */}
+      {(isFacilitator || isOwnItem) && (
         <td className="px-4 py-3">
-          <button
-            onClick={handleDelete}
-            className="text-red-400 hover:text-red-300 transition"
-            title="Delete item"
-          >
-            ✕
-          </button>
+          <div className="flex gap-2">
+            {isOwnItem && !isFacilitator && (
+              <button
+                onClick={handleEdit}
+                className="text-blue-400 hover:text-blue-300 transition"
+                title="Edit your item"
+              >
+                ✎
+              </button>
+            )}
+            {isFacilitator && (
+              <button
+                onClick={handleDelete}
+                className="text-red-400 hover:text-red-300 transition"
+                title="Delete item"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </td>
       )}
     </tr>

@@ -47,6 +47,10 @@ export function BoardProvider({ children, boardId, facilitatorToken }) {
     const eventSource = api.connectSSE(boardId, (event, data) => {
       if (event === 'item-added') {
         setItems(prev => [...prev, data]);
+      } else if (event === 'item-updated') {
+        setItems(prev => prev.map(item =>
+          item.id === data.id ? data : item
+        ));
       } else if (event === 'item-clapped') {
         setItems(prev => prev.map(item =>
           item.id === data.id ? data : item
@@ -80,10 +84,28 @@ export function BoardProvider({ children, boardId, facilitatorToken }) {
     }
   }, [boardId, api]);
 
+  const removeClap = useCallback(async (itemId) => {
+    try {
+      await api.removeClap(boardId, itemId);
+      // Item will be updated via SSE event
+    } catch (err) {
+      throw new Error(err.message);
+    }
+  }, [boardId, api]);
+
   const toggleReveal = useCallback(async (revealed) => {
     try {
       await api.toggleReveal(boardId, revealed);
       // Board will be updated via SSE event
+    } catch (err) {
+      throw new Error(err.message);
+    }
+  }, [boardId, api]);
+
+  const updateItem = useCallback(async (itemId, itemData) => {
+    try {
+      await api.updateItem(boardId, itemId, itemData);
+      // Item will be updated via SSE event
     } catch (err) {
       throw new Error(err.message);
     }
@@ -110,7 +132,9 @@ export function BoardProvider({ children, boardId, facilitatorToken }) {
     error,
     isFacilitator,
     addItem,
+    updateItem,
     addClap,
+    removeClap,
     toggleReveal,
     deleteItem,
     exportCSV
