@@ -5,7 +5,7 @@ import { ItemRow } from './ItemRow';
 export function ItemTable() {
   const { items, isFacilitator } = useBoard();
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('claps'); // 'claps' | 'time'
+  const [sortBy, setSortBy] = useState(null); // 'claps' | 'time' | null
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
 
   const filteredAndSortedItems = useMemo(() => {
@@ -17,6 +17,11 @@ export function ItemTable() {
         item.idea.toLowerCase().includes(query) ||
         item.who.toLowerCase().includes(query)
       );
+    }
+
+    // Only sort if user has explicitly clicked to sort
+    if (!sortBy) {
+      return filtered;
     }
 
     // Then sort
