@@ -89,19 +89,58 @@ gcloud run deploy wwwn-backend \
   --platform managed \
   --region us-west1 \
   --allow-unauthenticated \
-  --set-env-vars "NODE_ENV=production,PORT=8080"
+  --min-instances 0 \
+  --max-instances 10 \
+  --memory 512Mi \
+  --cpu 1 \
+  --port 8080 \
+  --set-env-vars "NODE_ENV=production,DEFAULT_BOARD_TTL_DAYS=7"
 ```
 
-#### Deploy Frontend
+#### Deploy Frontend (Docker-based for build arg support)
+
+**Note**: Frontend requires Docker build to inject API URL at build time.
 
 ```bash
 cd client
+
+# Configure Docker authentication for Artifact Registry
+gcloud auth configure-docker us-west1-docker.pkg.dev
+
+# Get backend URL
+BACKEND_URL=$(gcloud run services describe wwwn-backend --region us-west1 --format 'value(status.url)')
+
+# Build image for amd64 (Cloud Run requirement)
+docker build --platform linux/amd64 \
+  --build-arg VITE_API_URL=$BACKEND_URL/api \
+  -t us-west1-docker.pkg.dev/YOUR-PROJECT-ID/cloud-run-source-deploy/wwwn-frontend:latest \
+  .
+
+# Push to Artifact Registry
+docker push us-west1-docker.pkg.dev/YOUR-PROJECT-ID/cloud-run-source-deploy/wwwn-frontend:latest
+
+# Deploy to Cloud Run
 gcloud run deploy wwwn-frontend \
-  --source . \
-  --platform managed \
+  --image us-west1-docker.pkg.dev/YOUR-PROJECT-ID/cloud-run-source-deploy/wwwn-frontend:latest \
   --region us-west1 \
+  --platform managed \
   --allow-unauthenticated \
-  --set-build-env-vars "VITE_API_URL=https://your-backend-url/api"
+  --min-instances 0 \
+  --max-instances 10 \
+  --memory 256Mi \
+  --cpu 1 \
+  --port 8080
+```
+
+#### Update Backend CORS
+
+```bash
+cd server
+FRONTEND_URL=$(gcloud run services describe wwwn-frontend --region us-west1 --format 'value(status.url)')
+
+gcloud run services update wwwn-backend \
+  --region us-west1 \
+  --update-env-vars "CORS_ORIGIN=$FRONTEND_URL"
 ```
 
 ## Usage
@@ -182,9 +221,11 @@ VITE_API_URL=http://localhost:3001/api
 cd server
 docker build -t wwwn-backend .
 
-# Frontend
+# Frontend (must use --platform for Cloud Run compatibility)
 cd client
-docker build --build-arg VITE_API_URL=http://localhost:3001/api -t wwwn-frontend .
+docker build --platform linux/amd64 \
+  --build-arg VITE_API_URL=http://localhost:3001/api \
+  -t wwwn-frontend .
 ```
 
 ### Run with Docker
@@ -196,6 +237,11 @@ docker run -p 8080:8080 -e PORT=8080 wwwn-backend
 # Frontend
 docker run -p 8081:8080 wwwn-frontend
 ```
+
+### Important Notes
+
+- **Platform Architecture**: Cloud Run requires `linux/amd64` images. Always use `--platform linux/amd64` when building on ARM-based Macs.
+- **Build-time Variables**: Frontend API URL must be set at build time using `--build-arg VITE_API_URL=...` because Vite bakes environment variables into the bundle during build.
 
 ## Cost Estimate (Cloud Run)
 
